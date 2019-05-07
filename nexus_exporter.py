@@ -39,6 +39,8 @@ def parse():
     parser = argparse.ArgumentParser(
         description='Export Prometheus metrics for Sonatype Nexus > 3.6')
     parser.add_argument(
+        "--debug", help="Debug http request", default="false")
+    parser.add_argument(
         '--host', metavar='HOST',
         type=valid_url,
         help='address with port where Nexus is available. Defaults to\
@@ -255,10 +257,19 @@ def fatal(msg):
     print(msg)
     os._exit(1)  # hard exit without throwing exception
 
+
 if __name__ == "__main__":
-    print("starting...")
     args = parse()
+    print("starting...%s (debug=%s)" % (args.host, args.debug))
     REGISTRY.register(NexusCollector(args.host, args.user, args.password))
+    if args.debug == "true":
+        https_logger = urllib2.HTTPSHandler(debuglevel = 1)
+        https_opener = urllib2.build_opener(https_logger) # put your other handlers here too!
+        urllib2.install_opener(https_opener)
+        http_logger = urllib2.HTTPHandler(debuglevel = 1)
+        opener = urllib2.build_opener(http_logger) # put your other handlers here too!
+        urllib2.install_opener(opener)
+
     start_http_server(9184)
     while True:
         time.sleep(1)
