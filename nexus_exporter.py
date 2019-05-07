@@ -72,8 +72,13 @@ class NexusCollector(object):
         except HTTPError as err:
             if err.code == 401:
                 fatal('Authentication failure, attempting to restart')
+                return
         except URLError as err:
             fatal(err)
+            return
+        except:
+            fatal("Unknown error")
+            return
 
         i = self._info['system-runtime']
         yield GaugeMetricFamily(
@@ -255,12 +260,14 @@ class NexusCollector(object):
 
 def fatal(msg):
     print(msg)
-    os._exit(1)  # hard exit without throwing exception
+    # os._exit(1)  # hard exit without throwing exception
 
 
 if __name__ == "__main__":
     args = parse()
     print("starting...%s (debug=%s)" % (args.host, args.debug))
+    if args.debug == "true":
+        print("Auth %s:%s" % (args.user, args.password))
     REGISTRY.register(NexusCollector(args.host, args.user, args.password))
     if args.debug == "true":
         https_logger = urllib2.HTTPSHandler(debuglevel = 1)
